@@ -47,7 +47,10 @@ def create_connection():
         return None
 
 # Load the model safely
-model_path = os.path.abspath(r"C:\Users\A2Z\Desktop\Cloud\build.pkl")
+model_path = os.path.join(os.path.dirname(__file__), 'build.pkl')  # Relative path
+
+# Debug: Print the model path
+st.write(f"Model path: {model_path}")
 
 if not os.path.exists(model_path):
     st.error(f"Model file not found at: {model_path}")
@@ -63,6 +66,7 @@ else:
     except Exception as e:
         st.error(f"Error loading model: {e}\n{traceback.format_exc()}")
         model = None
+
 
 st.title('Loan Approval Prediction')
 st.write('Enter the details below to check your loan approval status.')
