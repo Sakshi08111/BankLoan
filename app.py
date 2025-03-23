@@ -46,14 +46,12 @@ def create_connection():
         st.error(f"Database connection error: {e}")
         return None
 
-
-
 # Load the model safely
-model_path = os.path.abspath(r"C:\Users\A2Z\Desktop\Cloud\build.pkl")
+model_path = os.path.join(os.path.dirname(__file__), 'build.pkl')  # Use relative path
 
 if not os.path.exists(model_path):
     st.error(f"Model file not found at: {model_path}")
-    model = None
+    st.stop()  # Stop the app if the model is not found
 else:
     try:
         with open(model_path, 'rb') as f:
@@ -65,7 +63,6 @@ else:
     except Exception as e:
         st.error(f"Error loading model: {e}\n{traceback.format_exc()}")
         model = None
-
 
 st.title('Loan Approval Prediction')
 st.write('Enter the details below to check your loan approval status.')
