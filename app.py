@@ -3,6 +3,8 @@ import numpy as np
 import pickle
 import mysql.connector
 import pandas as pd
+import os
+import traceback
 
 def create_connection():
     try:
@@ -44,15 +46,26 @@ def create_connection():
         st.error(f"Database connection error: {e}")
         return None
 
+
+
 # Load the model safely
-model_path = r"C:\Users\A2Z\Desktop\Cloud\build.pkl"
-try:
-    with open(model_path, 'rb') as f:
-        model = pickle.load(f)
-    st.success("Model loaded successfully.")
-except Exception as e:
-    st.error(f"Error loading model: {e}")
+model_path = os.path.abspath(r"C:\Users\A2Z\Desktop\Cloud\build.pkl")
+
+if not os.path.exists(model_path):
+    st.error(f"Model file not found at: {model_path}")
     model = None
+else:
+    try:
+        with open(model_path, 'rb') as f:
+            model = pickle.load(f)
+        st.success("Model loaded successfully.")
+    except pickle.UnpicklingError:
+        st.error("Error: The model file might be corrupted or not a valid pickle file.")
+        model = None
+    except Exception as e:
+        st.error(f"Error loading model: {e}\n{traceback.format_exc()}")
+        model = None
+
 
 st.title('Loan Approval Prediction')
 st.write('Enter the details below to check your loan approval status.')
