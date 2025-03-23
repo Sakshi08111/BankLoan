@@ -83,11 +83,21 @@ property_area = st.selectbox('Property Area', ['Urban', 'Semiurban', 'Rural'])
 customer_bandwidth = st.selectbox('Customer Bandwidth', ['Low', 'Medium', 'High'])
 
 # Predict button
+# Predict button
 if st.button('Predict'):
     if model is not None:
         try:
-            input_data = pd.DataFrame([[customer_age, family_member, income, loan_amount, cibil_score, tenure]], 
-                                       columns=['Age', 'Dependents', 'ApplicantIncome', 'LoanAmount', 'Cibil_Score', 'Tenure'])
+            # Create input data with all required features
+            input_data = pd.DataFrame([[customer_age, family_member, income, loan_amount, cibil_score, tenure, gender, married, education, self_employed, previous_loan_taken, property_area, customer_bandwidth]], 
+                                      columns=['Age', 'Dependents', 'ApplicantIncome', 'LoanAmount', 'Cibil_Score', 'Tenure', 'Gender', 'Married', 'Education', 'Self_Employed', 'Previous_Loan_Taken', 'Property_Area', 'Customer_Bandwidth'])
+            
+            # Debug: Print input data and feature names
+            st.write("Input Data:")
+            st.write(input_data)
+            if hasattr(model, 'feature_names_in_'):
+                st.write(f"Model feature names: {model.feature_names_in_}")
+
+            # Make prediction
             prediction = model.predict(input_data)
             result = 'Loan Approved' if prediction[0] == 0 else 'Loan Rejected'
 
