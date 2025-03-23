@@ -2,6 +2,7 @@ import streamlit as st
 import numpy as np
 import pickle
 import mysql.connector
+import pandas as pd
 
 def create_connection():
     try:
@@ -44,18 +45,14 @@ def create_connection():
         return None
 
 # Load the model safely
-
-import pickle
-
 model_path = r"C:\Users\A2Z\Desktop\Cloud\build.pkl"
 try:
     with open(model_path, 'rb') as f:
         model = pickle.load(f)
-    print("Model loaded successfully.")
+    st.success("Model loaded successfully.")
 except Exception as e:
-    print(f"Error loading model: {e}")
-
-
+    st.error(f"Error loading model: {e}")
+    model = None
 
 st.title('Loan Approval Prediction')
 st.write('Enter the details below to check your loan approval status.')
@@ -77,28 +74,32 @@ customer_bandwidth = st.selectbox('Customer Bandwidth', ['Low', 'Medium', 'High'
 
 # Predict button
 if st.button('Predict'):
-    try:
-        features = np.array([[customer_age, family_member, income, loan_amount, cibil_score, tenure]])
-        prediction = model.predict(features)
-        result = 'Loan Approved' if prediction[0] == 0 else 'Loan Rejected'
+    if model is not None:
+        try:
+            input_data = pd.DataFrame([[customer_age, family_member, income, loan_amount, cibil_score, tenure]], 
+                                       columns=['Age', 'Dependents', 'ApplicantIncome', 'LoanAmount', 'Cibil_Score', 'Tenure'])
+            prediction = model.predict(input_data)
+            result = 'Loan Approved' if prediction[0] == 0 else 'Loan Rejected'
 
-        if prediction[0] == 1:
-            st.error('Loan is Rejected')
-        else:
-            st.success('Loan is Approved')
+            if prediction[0] == 1:
+                st.error('Loan is Rejected')
+            else:
+                st.success('Loan is Approved')
 
-        # Save to MySQL
-        conn = create_connection()
-        if conn:
-            cursor = conn.cursor()
-            cursor.execute("""
-                INSERT INTO loan_applications 
-                (customer_age, family_member, income, loan_amount, cibil_score, tenure, gender, married, education, self_employed, previous_loan_taken, property_area, customer_bandwidth, prediction)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-            """, (customer_age, family_member, income, loan_amount, cibil_score, tenure, gender, married, education, self_employed, previous_loan_taken, property_area, customer_bandwidth, result))
-            conn.commit()
-            st.success("Data saved to database.")
-            cursor.close()
-            conn.close()
-    except Exception as e:
-        st.error(f"An error occurred: {e}")
+            # Save to MySQL
+            conn = create_connection()
+            if conn:
+                cursor = conn.cursor()
+                cursor.execute("""
+                    INSERT INTO loan_applications 
+                    (customer_age, family_member, income, loan_amount, cibil_score, tenure, gender, married, education, self_employed, previous_loan_taken, property_area, customer_bandwidth, prediction)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                """, (customer_age, family_member, income, loan_amount, cibil_score, tenure, gender, married, education, self_employed, previous_loan_taken, property_area, customer_bandwidth, result))
+                conn.commit()
+                st.success("Data saved to database.")
+                cursor.close()
+                conn.close()
+        except Exception as e:
+            st.error(f"An error occurred: {e}")
+    else:
+        st.error("Model is not loaded. Please check the model file.")
