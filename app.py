@@ -49,9 +49,6 @@ def create_connection():
 # Load the model safely
 model_path = os.path.join(os.path.dirname(__file__), 'build.pkl')  # Relative path
 
-# Debug: Print the model path
-st.write(f"Model path: {model_path}")
-
 if not os.path.exists(model_path):
     st.error(f"Model file not found at: {model_path}")
     st.stop()  # Stop the app if the model is not found
@@ -100,22 +97,20 @@ if st.button('Predict'):
                 'Property_Area', 'Customer_Bandwith'  # Match feature names from training data
             ])
 
-            # Preprocess categorical data if required (e.g., encoding)
+            # Preprocess categorical data (encode into numerical values)
             input_data['Gender'] = input_data['Gender'].map({'Male': 0, 'Female': 1})
             input_data['Married'] = input_data['Married'].map({'Yes': 1, 'No': 0})
+            input_data['Education'] = input_data['Education'].map({'Graduate': 1, 'Not Graduate': 0})
             input_data['Self_Employed'] = input_data['Self_Employed'].map({'Yes': 1, 'No': 0})
             input_data['Previous_Loan_Taken'] = input_data['Previous_Loan_Taken'].map({'Yes': 1, 'No': 0})
             input_data['Property_Area'] = input_data['Property_Area'].map({'Urban': 2, 'Semiurban': 1, 'Rural': 0})
             input_data['Customer_Bandwith'] = input_data['Customer_Bandwith'].map({'Low': 0, 'Medium': 1, 'High': 2})
 
-            # Debug: Print input data
-            st.write("Input Data:")
-            st.write(input_data)
-
             # Predict the outcome
             prediction = model.predict(input_data)
             result = 'Loan Approved' if prediction[0] == 0 else 'Loan Rejected'
 
+            # Display the result
             if prediction[0] == 1:
                 st.error('Loan is Rejected')
             else:
