@@ -31,4 +31,115 @@ def create_connection():
                 tenure INT,
                 gender VARCHAR(10),
                 married VARCHAR(10),
-                education VARCHAR(15
+                education VARCHAR(15),
+                self_employed VARCHAR(10),
+                previous_loan_taken VARCHAR(10),
+                property_area VARCHAR(15),
+                customer_bandwidth VARCHAR(10),
+                prediction VARCHAR(15)
+            )
+            """)
+            connection.commit()
+            cursor.close()
+            return connection
+    except mysql.connector.Error as e:
+        st.error(f"Database connection error: {e}")
+        return None
+
+# Load the model safely
+model_path = os.path.join(os.path.dirname(__file__), 'build.pkl')  # Relative path
+
+# Debug: Print the model path
+st.write(f"Model path: {model_path}")
+
+if not os.path.exists(model_path):
+    st.error(f"Model file not found at: {model_path}")
+    st.stop()  # Stop the app if the model is not found
+else:
+    try:
+        with open(model_path, 'rb') as f:
+            model = pickle.load(f)
+        st.success("Model loaded successfully.")
+    except pickle.UnpicklingError:
+        st.error("Error: The model file might be corrupted or not a valid pickle file.")
+        model = None
+    except Exception as e:
+        st.error(f"Error loading model: {e}\n{traceback.format_exc()}")
+        model = None
+
+st.title('Loan Approval Prediction')
+st.write('Enter the details below to check your loan approval status.')
+
+# Input fields
+customer_age = st.number_input('Customer Age', min_value=18, max_value=100, step=1)
+family_member = st.number_input('Family Member', min_value=0, step=1)
+income = st.number_input('Income', min_value=0.0, step=100.0)
+loan_amount = st.number_input('Loan Amount', min_value=0.0, step=100.0)
+cibil_score = st.number_input('Cibil Score', min_value=300, max_value=900, step=1)
+tenure = st.number_input('Tenure (in months)', min_value=6, step=6)
+gender = st.selectbox('Gender', ['Male', 'Female'])
+married = st.selectbox('Married', ['Yes', 'No'])
+education = st.selectbox('Education', ['Graduate', 'Not Graduate'])
+self_employed = st.selectbox('Self Employed', ['Yes', 'No'])
+previous_loan_taken = st.selectbox('Previous Loan Taken', ['Yes', 'No'])
+property_area = st.selectbox('Property Area', ['Urban', 'Semiurban', 'Rural'])
+customer_bandwidth = st.selectbox('Customer Bandwidth', ['Low', 'Medium', 'High'])
+
+# Predict button
+if st.button('Predict'):
+    if model is not None:
+        try:
+            # Match features with training data
+            input_data = pd.DataFrame([[
+                customer_age, family_member, income, loan_amount, cibil_score, tenure,
+                gender, married, education, self_employed, previous_loan_taken,
+                property_area, customer_bandwidth
+            ]], columns=[
+                'customer_age', 'family_member', 'income', 'loan_amount', 'cibil_score',
+                'tenure', 'gender', 'married', 'education', 'self_employed',
+                'previous_loan_taken', 'property_area', 'customer_bandwidth'
+            ])
+
+            # Preprocess categorical data if required (e.g., encoding)
+            input_data['gender'] = input_data['gender'].map({'Male': 0, 'Female': 1})
+            input_data['married'] = input_data['married'].map({'Yes': 1, 'No': 0})
+            input_data['self_employed'] = input_data['self_employed'].map({'Yes': 1, 'No': 0})
+            input_data['previous_loan_taken'] = input_data['previous_loan_taken'].map({'Yes': 1, 'No': 0})
+            input_data['property_area'] = input_data['property_area'].map({'Urban': 2, 'Semiurban': 1, 'Rural': 0})
+            input_data['customer_bandwidth'] = input_data['customer_bandwidth'].map({'Low': 0, 'Medium': 1, 'High': 2})
+
+            # Predict the outcome
+            prediction = model.predict(input_data)
+            result = 'Loan Approved' if prediction[0] == 0 else 'Loan Rejected'
+
+            if prediction[0] == 1:
+                st.error('Loan is Rejected')
+            else:
+                st.success('Loan is Approved')
+
+            # Save to MySQL
+            conn = create_connection()
+            if conn:
+                cursor = conn.cursor()
+                cursor.execute("""
+                    INSERT INTO loan_applications 
+                    (customer_age, family_member, income, loan_amount, cibil_score, tenure, gender, married, education, self_employed, previous_loan_taken, property_area, customer_bandwidth, prediction)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                """, (
+                    customer_age, family_member, income, loan_amount, cibil_score, tenure,
+                    'Male' if gender == 0 else 'Female',
+                    'Yes' if married == 1 else 'No',
+                    education, 'Yes' if self_employed == 1 else 'No',
+                    'Yes' if previous_loan_taken == 1 else 'No',
+                    'Urban' if property_area == 2 else 'Semiurban' if property_area == 1 else 'Rural',
+                    'Low' if customer_bandwidth == 0 else 'Medium' if customer_bandwidth == 1 else 'High',
+                    result
+                ))
+                conn.commit()
+                st.success("Data saved to database.")
+                cursor.close()
+                conn.close()
+        except Exception as e:
+            st.error(f"An error occurred: {e}\n{traceback.format_exc()}")
+    else:
+        st.error("Model is not loaded. Please check the model file.")
