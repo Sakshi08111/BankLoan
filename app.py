@@ -122,20 +122,15 @@ if st.button('Predict'):
                 cursor = conn.cursor()
                 cursor.execute("""
                     INSERT INTO loan_applications 
-                    (customer_age, family_member, income, loan_amount, cibil_score, tenure, gender, married, education, self_employed, previous_loan_taken, property_area, customer_bandwidth, prediction)
+                    (customer_age, family_member, income, loan_amount, cibil_score, tenure, gender, 
+                     married, education, self_employed, previous_loan_taken, property_area, 
+                     customer_bandwidth, prediction)
                     VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-                """, (
-                    customer_age, family_member, income, loan_amount, cibil_score, tenure,
-                    'Male' if gender == 0 else 'Female',
-                    'Yes' if married == 1 else 'No',
-                    education, 'Yes' if self_employed == 1 else 'No',
-                    'Yes' if previous_loan_taken == 1 else 'No',
-                    'Urban' if property_area == 2 else 'Semiurban' if property_area == 1 else 'Rural',
-                    'Low' if customer_bandwidth == 0 else 'Medium' if customer_bandwidth == 1 else 'High',
-                    result
-                ))
+                """, (customer_age, family_member, income, loan_amount, cibil_score, tenure, gender,
+                      married, education, self_employed, previous_loan_taken, property_area,
+                      customer_bandwidth, result))
                 conn.commit()
-                st.success("Data saved to database.")
+                st.success("User data stored successfully.")
                 cursor.close()
                 conn.close()
         except Exception as e:
