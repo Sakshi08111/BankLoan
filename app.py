@@ -17,10 +17,16 @@ def create_connection():
         )
         if connection.is_connected():
             st.success("Connected to the database successfully!")
-            cursor = connection.cursor()
+            create_table(connection)
+            return connection
+    except mysql.connector.Error as e:
+        st.error(f"Database connection error: {e}")
+        return None
 
-            # Create table if not exists
-            cursor.execute("""
+def create_table(connection):
+    try:
+        cursor = connection.cursor()
+        cursor.execute('''
             CREATE TABLE IF NOT EXISTS loan_applications (
                 id INT AUTO_INCREMENT PRIMARY KEY,
                 customer_age INT,
@@ -38,14 +44,23 @@ def create_connection():
                 customer_bandwidth VARCHAR(10),
                 prediction VARCHAR(15)
             )
-            """)
-            connection.commit()
-            cursor.close()
-            return connection
+        ''')
+        connection.commit()
+        st.success("Table 'loan_applications' checked/created successfully.")
     except mysql.connector.Error as e:
-        st.error(f"Database connection error: {e}")
-        return None
+        st.error(f"Error creating table: {e}")
+    finally:
+        cursor.close()
 
+def main():
+    st.title("Loan Approval Prediction - Database Management")
+    connection = create_connection()
+    
+    if connection:
+        st.write("You can now interact with your database!")
+        # Example - Additional options can be added later
+        if st.button("Check Connection Again"):
+            st.success("Database connection is active.")
 # Load the model safely
 model_path = os.path.join(os.path.dirname(__file__), 'build.pkl')  # Relative path
 
