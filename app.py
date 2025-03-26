@@ -79,13 +79,13 @@ customer_bandwidth = st.selectbox('Customer Bandwidth', ['Low', 'Medium', 'High'
 if st.button('Predict'):
     if model is not None:
         try:
-            # Prepare input data with all necessary features
+            # Prepare input data with correct feature names
             input_data = pd.DataFrame([[customer_age, family_member, income, loan_amount, cibil_score, tenure,
                                          gender, married, education, self_employed, previous_loan_taken, 
                                          property_area, customer_bandwidth]], 
                                        columns=['Age', 'Dependents', 'ApplicantIncome', 'LoanAmount', 'Cibil_Score', 'Tenure',
                                                 'Gender', 'Married', 'Education', 'Self_Employed', 'Previous_Loan_Taken', 
-                                                'Property_Area', 'Customer_Bandwidth'])
+                                                'Property_Area', 'Customer_Bandwith'])  # Corrected here
             
             prediction = model.predict(input_data)
             result = 'Loan Approved' if prediction[0] == 0 else 'Loan Rejected'
@@ -102,7 +102,7 @@ if st.button('Predict'):
                 cursor.execute("""
                     INSERT INTO loan_applications 
                     (customer_age, family_member, income, loan_amount, cibil_score, tenure, gender, married, education, 
-                    self_employed, previous_loan_taken, property_area, customer_bandwidth, prediction)
+                    self_employed, previous_loan_taken, property_area, customer_bandwith, prediction)  -- Corrected here
                     VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 """, (customer_age, family_member, income, loan_amount, cibil_score, tenure, gender, married, education, 
                       self_employed, previous_loan_taken, property_area, customer_bandwidth, result))
