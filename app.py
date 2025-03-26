@@ -91,16 +91,22 @@ previous_loan_taken = st.selectbox('Previous Loan Taken', ['Yes', 'No'])
 property_area = st.selectbox('Property Area', ['Urban', 'Semiurban', 'Rural'])
 customer_bandwidth = st.selectbox('Customer Bandwidth', ['Low', 'Medium', 'High'])
 
+# Predict button
 if st.button('Predict'):
     if model is not None:
         try:
-            # Prepare input data with correct feature names
+            # First encode all categorical variables
+            gender_enc, married_enc, education_enc, self_employed_enc, previous_loan_taken_enc, property_area_enc, customer_bandwidth_enc = encode_data(
+                gender, married, education, self_employed, previous_loan_taken, property_area, customer_bandwidth
+            )
+            
+            # Prepare input data with encoded values
             input_data = pd.DataFrame([[customer_age, family_member, income, loan_amount, cibil_score, tenure,
-                                         gender, married, education, self_employed, previous_loan_taken, 
-                                         property_area, customer_bandwidth]], 
-                                       columns=['Age', 'Dependents', 'ApplicantIncome', 'LoanAmount', 'Cibil_Score', 'Tenure',
-                                                'Gender', 'Married', 'Education', 'Self_Employed', 'Previous_Loan_Taken', 
-                                                'Property_Area', 'Customer_Bandwith'])  # Corrected here
+                                      gender_enc, married_enc, education_enc, self_employed_enc, 
+                                      previous_loan_taken_enc, property_area_enc, customer_bandwidth_enc]], 
+                                    columns=['Age', 'Dependents', 'ApplicantIncome', 'LoanAmount', 'Cibil_Score', 'Tenure',
+                                             'Gender', 'Married', 'Education', 'Self_Employed', 'Previous_Loan_Taken', 
+                                             'Property_Area', 'Customer_Bandwith'])
             
             prediction = model.predict(input_data)
             result = 'Loan Approved' if prediction[0] == 0 else 'Loan Rejected'
@@ -110,14 +116,14 @@ if st.button('Predict'):
             else:
                 st.success('Loan is Approved')
 
-            # Save to MySQL
+            # Save to MySQL (with original values, not encoded ones)
             conn = create_connection()
             if conn:
                 cursor = conn.cursor()
                 cursor.execute("""
                     INSERT INTO loan_applications 
                     (customer_age, family_member, income, loan_amount, cibil_score, tenure, gender, married, education, 
-                    self_employed, previous_loan_taken, property_area, customer_bandwith, prediction)  -- Corrected here
+                    self_employed, previous_loan_taken, property_area, customer_bandwith, prediction)
                     VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 """, (customer_age, family_member, income, loan_amount, cibil_score, tenure, gender, married, education, 
                       self_employed, previous_loan_taken, property_area, customer_bandwidth, result))
@@ -126,7 +132,7 @@ if st.button('Predict'):
                 cursor.close()
                 conn.close()
         except Exception as e:
-            st.error(f"An error occurred: {e}")
+            st.error(f"An error occurred: {e}\n{traceback.format_exc()}")
     else:
         st.error("Model is not loaded. Please check the model file.")
 
