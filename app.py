@@ -11,14 +11,26 @@ from datetime import datetime
 # Database Connection (Simplified Working Version)
 def create_connection():
     try:
-        return mysql.connector.connect(
-            host='127.0.0.1',
-            user='root',
-            password='123456789',  # Add password if set
-            database='bankloan'
-        )
+        # Try different connection approaches
+        for host in ['127.0.0.1', 'localhost']:
+            try:
+                conn = mysql.connector.connect(
+                    host=host,
+                    user='root',
+                    password='',  # Add password if you set one
+                    database='bankloan',
+                    port=3306,
+                    connect_timeout=3  # Fail fast if can't connect
+                )
+                st.success(f"Connected to MySQL at {host}")
+                return conn
+            except Error as e:
+                st.warning(f"Failed to connect to {host}: {e}")
+        
+        st.error("Could not connect to MySQL with any configuration")
+        return None
     except Error as e:
-        st.error(f"Connect to MySQL first! Error: {e}")
+        st.error(f"MySQL Error: {e}")
         return None
 
 def save_to_db(data):
