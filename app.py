@@ -14,7 +14,7 @@ def create_connection():
         return mysql.connector.connect(
             host='127.0.0.1',
             user='root',
-            password='',  # Add password if set
+            password='123456789',  # Add password if set
             database='bankloan'
         )
     except Error as e:
