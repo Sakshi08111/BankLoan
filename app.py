@@ -76,13 +76,17 @@ previous_loan_taken = st.selectbox('Previous Loan Taken', ['Yes', 'No'])
 property_area = st.selectbox('Property Area', ['Urban', 'Semiurban', 'Rural'])
 customer_bandwidth = st.selectbox('Customer Bandwidth', ['Low', 'Medium', 'High'])
 
-# Predict button
 if st.button('Predict'):
     if model is not None:
         try:
-            # Map the input data to the feature names expected by the model
-            input_data = pd.DataFrame([[customer_age, family_member, income, loan_amount, cibil_score, tenure]], 
-                                       columns=['Age', 'Dependents', 'ApplicantIncome', 'LoanAmount', 'Cibil_Score', 'Tenure'])
+            # Prepare input data with all necessary features
+            input_data = pd.DataFrame([[customer_age, family_member, income, loan_amount, cibil_score, tenure,
+                                         gender, married, education, self_employed, previous_loan_taken, 
+                                         property_area, customer_bandwidth]], 
+                                       columns=['Age', 'Dependents', 'ApplicantIncome', 'LoanAmount', 'Cibil_Score', 'Tenure',
+                                                'Gender', 'Married', 'Education', 'Self_Employed', 'Previous_Loan_Taken', 
+                                                'Property_Area', 'Customer_Bandwidth'])
+            
             prediction = model.predict(input_data)
             result = 'Loan Approved' if prediction[0] == 0 else 'Loan Rejected'
 
@@ -92,24 +96,22 @@ if st.button('Predict'):
                 st.success('Loan is Approved')
 
             # Save to MySQL
-            connection = create_connection()
-            if connection:
-                cursor = connection.cursor()
+            conn = create_connection()
+            if conn:
+                cursor = conn.cursor()
                 cursor.execute("""
                     INSERT INTO loan_applications 
-                    (customer_age, family_member, income, loan_amount, cibil_score, tenure, gender, married, education, self_employed, previous_loan_taken, property_area, customer_bandwidth, prediction)
+                    (customer_age, family_member, income, loan_amount, cibil_score, tenure, gender, married, education, 
+                    self_employed, previous_loan_taken, property_area, customer_bandwidth, prediction)
                     VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-                """, (customer_age, family_member, income, loan_amount, cibil_score, tenure, gender, married, education, self_employed, previous_loan_taken, property_area, customer_bandwidth, result))
-                connection.commit()
+                """, (customer_age, family_member, income, loan_amount, cibil_score, tenure, gender, married, education, 
+                      self_employed, previous_loan_taken, property_area, customer_bandwidth, result))
+                conn.commit()
                 st.success("Data saved to database.")
-            else:
-                st.error("Failed to save data. Database connection not established.")
-        
+                cursor.close()
+                conn.close()
         except Exception as e:
             st.error(f"An error occurred: {e}")
-        finally:
-            if connection and connection.is_connected():
-                cursor.close()
-                connection.close()
     else:
         st.error("Model is not loaded. Please check the model file.")
+
