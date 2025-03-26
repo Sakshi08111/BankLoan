@@ -57,7 +57,22 @@ try:
 except Exception as e:
     st.error(f"Error loading model: {e}\n{traceback.format_exc()}")
     st.stop()
+
+def encode_data(gender, married, education, self_employed, previous_loan_taken, property_area, customer_bandwidth):
+    gender = 1 if gender == 'Male' else 0
+    married = 1 if married == 'Yes' else 0
+    education = 1 if education == 'Graduate' else 0
+    self_employed = 1 if self_employed == 'Yes' else 0
+    previous_loan_taken = 1 if previous_loan_taken == 'Yes' else 0
+
+    property_area_mapping = {'Urban': 2, 'Semiurban': 1, 'Rural': 0}
+    customer_bandwidth_mapping = {'Low': 0, 'Medium': 1, 'High': 2}
     
+    property_area = property_area_mapping[property_area]
+    customer_bandwidth = customer_bandwidth_mapping[customer_bandwidth]
+    
+    return gender, married, education, self_employed, previous_loan_taken, property_area, customer_bandwidth
+
 st.title('Loan Approval Prediction')
 st.write('Enter the details below to check your loan approval status.')
 
